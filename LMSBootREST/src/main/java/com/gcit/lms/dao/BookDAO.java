@@ -1,70 +1,160 @@
 package com.gcit.lms.dao;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.springframework.jdbc.core.ResultSetExtractor;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.core.*;
+import org.springframework.jdbc.support.*;
 import org.springframework.stereotype.Component;
 
+import java.sql.*;
+import java.util.*;
+
+import com.gcit.lms.entity.Author;
 import com.gcit.lms.entity.Book;
+import com.gcit.lms.entity.Genre;
 
 @Component
-public class BookDAO extends BaseDAO<Book> implements ResultSetExtractor<List<Book>> {
-
-	public void createBook(Book book)
-			throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
-		template.update("INSERT INTO tbl_book (title) values (?)", new Object[] { book.getTitle() });
+public class BookDao extends BaseDao implements ResultSetExtractor<List<Book>>{
+	
+	public void addBook(Book book) throws SQLException {
+		for (Author author : book.getAuthors()){
+			addBookAuthors(book.getBookId(), author.getAuthorID());
+		}
+		for (Genre genre : book.getGenres()){
+			addBookGenres(book.getBookId(), genre.getGenreId());
+		}
+	}
+	
+	public void addBookAuthors(Integer bookID, Integer authorID) throws SQLException {
+		String   addBookAuthor  = "INSERT INTO tbl_book_authors VALUE (?,?)";
+		Object[] bookAuthorInfo = {bookID, authorID};
+		template.update(addBookAuthor, bookAuthorInfo);
+	}
+	
+	public void addBookAuthors(Book book) throws SQLException{
+		for (Author author : book.getAuthors()){
+			addBookAuthors(book.getBookId(), author.getAuthorID());
+		} 
 	}
 
-	public Integer addBookWithID(Book book) throws ClassNotFoundException, SQLException {
-		GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
-		template.update(con -> {
-			PreparedStatement ps = con.prepareStatement("insert into tbl_book (title) values (?)", new String[] { "bookId" });
-			ps.setString(1, book.getTitle());
-			return ps;
-		}, keyHolder);
-
-		return (Integer) keyHolder.getKeys().get("bookId");
+	public void addBookGenres(Integer bookID, Integer genreID) throws SQLException {
+		String  addBookGenres  = "INSERT INTO tbl_book_genres VALUE (?,?)";
+		Object[] bookGenreInfo = {genreID, bookID};
+		template.update(addBookGenres, bookGenreInfo);
 	}
-
-	public void updateBook(Book book)
-			throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
-		template.update("update tbl_book set title =? where bookId = ?",
-				new Object[] { book.getTitle(), book.getBookId() });
+	
+	public void addBookGenres(Book book) throws SQLException{
+		for (Genre genre : book.getGenres()){
+			addBookGenres(book.getBookId(), genre.getGenreId());
+		}
 	}
-
-	public void deleteBook(Book book)
-			throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
-		template.update("delete from tbl_book where bookId = ?", new Object[] { book.getBookId() });
+	
+	public Integer addBookReturnID(Book book) throws SQLException{
+		final String addBook  = "INSERT INTO tbl_book (title, pubId) VALUE (?,?)";
+		Object[] 	 bookInfo = {book.getTitle(), book.getPublisher().get(0).getPublisherId()};
+		KeyHolder    bookID   = new GeneratedKeyHolder();
+		template.update(new PreparedStatementCreator() {public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
+				PreparedStatement ps = connection.prepareStatement(addBook, Statement.RETURN_GENERATED_KEYS);
+				ps.setObject(1, bookInfo[0]);
+				ps.setObject(2, bookInfo[1]);
+				return ps;
+			}
+		}, bookID);
+		return bookID.getKey().intValue();
 	}
-
-	public List<Book> readAllBooks() throws ClassNotFoundException, SQLException {
-		return template.query("select * from tbl_book", this);
+	
+	public void updateBook(Book book) throws SQLException{
+		final String updateBook = "UPDATE tbl_book SET title=? WHERE bookId=?";
+		Object[]     bookInfo   = {book.getTitle(), book.getBookId()};
+		template.update(updateBook, bookInfo);
 	}
-
-	public List<Book> readAllBooksByName(String searchString) throws ClassNotFoundException, SQLException {
-		return template.query("select * from tbl_book where title = ?", new Object[] { searchString }, this);
+	
+	public void deleteBook(Book book) throws SQLException{
+		final String deleteBook = "DELETE FROM tbl_book WHERE bookId=?";
+		Object[]     bookInfo   = {book.getBookId()};
+		template.update(deleteBook, bookInfo);
 	}
-
-	public Book readBookByPK(Integer primaryKey) throws ClassNotFoundException, SQLException {
-		List<Book> books = template.query("select * from tbl_book where bookId = ?", new Object[] { primaryKey }, this);
-		if (!books.isEmpty()) {
+	
+	public void deleteBookAuthors(Book book) throws SQLException {
+		String  deleteBookAuthor  = "DELETE FROM tbl_book_authors WHERE bookId=?";
+		Object[] bookAuthorInfo = {book.getBookId()};
+		template.update(deleteBookAuthor, bookAuthorInfo);
+	}
+	
+	public void updateBookGenres(Integer genreID, Integer bookID) throws SQLException{
+		String  updateBookGenres = "UPDATE tbl_book_genres SET genre_id=? WHERE bookId=?";
+		Object[] bookGenreInfo = {genreID, bookID};
+		template.update(updateBookGenres,bookGenreInfo);
+	}
+	
+	public void deleteBookGenres(Book book) throws SQLException{
+		String  deleteBookGenres = "DELETE FROM tbl_book_genres WHERE bookId=?";
+		Object[] bookGenreInfo = {book.getBookId()};
+		template.update(deleteBookGenres,bookGenreInfo);
+	}
+	
+	public void updateBookPublisher(Book book) throws SQLException {
+		String  updateBookPublisher  = "UPDATE tbl_book SET pubId=? WHERE bookId=?";
+		Object[] bookPublisherInfo = {book.getPublisher().get(0).getPublisherId(), book.getBookId()};
+		template.update(updateBookPublisher,bookPublisherInfo);
+	}
+	
+	public List<Book> readAllBook() throws SQLException{
+		final String readBook = "SELECT * FROM tbl_book";
+		return template.query(readBook, this);
+	}
+	
+	public Book readBook(Integer bookID) throws SQLException{
+		final String readBook = "SELECT * FROM tbl_book WHERE bookId=?";
+		Object[] 	 bookInfo = {bookID};
+		List<Book>   books    = template.query(readBook, bookInfo, this);
+		if (books != null && !books.isEmpty()) {
 			return books.get(0);
 		}
 		return null;
 	}
-
+	
+	public List<Book> readBook(String bookName) throws SQLException{
+		final String readBook = "SELECT * FROM tbl_book WHERE title LIKE ?";
+		Object[] 	 bookInfo = {("%" + bookName + "%")};
+		return template.query(readBook, bookInfo, this);
+	}
+	
+	public List<Book> readBookByAuthor(Integer authorID){
+		final String readBook   = "SELECT * FROM tbl_book WHERE bookId IN (SELECT bookId FROM tbl_book_authors WHERE authorId=?)";
+		Object[]     authorInfo = {(authorID)};
+		return template.query(readBook, authorInfo, this);
+	}
+	
+	public List<Book> readBookByGenre(Integer genreID){
+		final String readBook  = "SELECT * FROM tbl_book WHERE bookId IN (SELECT bookId FROM tbl_book_genres WHERE genre_id=?)";
+		Object[]     genreInfo = {(genreID)};
+		return template.query(readBook, genreInfo, this);
+	}
+	
+	public List<Book> readBookByPublisher(Integer pubID){
+		final String readBook  = "SELECT * FROM tbl_book WHERE pubId=?";
+		Object[] publisherInfo = {(pubID)};
+		return template.query(readBook, publisherInfo, this);
+	}
+	
+	public List<Book> readBookByBranch(Integer branchID){
+		final String readBook  = "SELECT * FROM tbl_book WHERE bookId IN (SELECT bookId  FROM tbl_book_copies WHERE branchId=?)";
+		Object[] branchInfo = {(branchID)};
+		return template.query(readBook, branchInfo, this);
+	}
+	
+	public List<Book> readBookByBranchCon(Integer branchID){
+		final String readBook = "SELECT * FROM tbl_book WHERE bookId IN (SELECT bookId FROM tbl_book_copies WHERE branchId=? AND noOfCopies>0)";
+		Object[] branchInfo = {(branchID)};
+		return template.query(readBook, branchInfo, this);
+	}
+	
 	@Override
-	public List<Book> extractData(ResultSet rs) throws SQLException {
-		List<Book> books = new ArrayList<>();
-		while (rs.next()) {
+	public List<Book> extractData(ResultSet rs) throws SQLException{
+		List<Book> books     = new ArrayList<>();
+		while(rs.next()){
 			Book book = new Book();
-			book.setBookId(rs.getInt("bookId"));
 			book.setTitle(rs.getString("title"));
+			book.setBookId(rs.getInt("bookId"));
 			books.add(book);
 		}
 		return books;

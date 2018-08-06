@@ -1,23 +1,23 @@
 package com.gcit.lms.entity;
-
-import java.util.List;
+import java.util.*;
 
 public class Author {
+
 	
-	private Integer authorId;
-	private String authorName;
+	private Integer authorID;
+	private String  authorName;
 	private List<Book> books;
 	/**
-	 * @return the authorId
+	 * @return the authorID
 	 */
-	public Integer getAuthorId() {
-		return authorId;
+	public Integer getAuthorID() {
+		return authorID;
 	}
 	/**
-	 * @param authorId the authorId to set
+	 * @param authorID the authorID to set
 	 */
-	public void setAuthorId(Integer authorId) {
-		this.authorId = authorId;
+	public void setAuthorID(Integer authorID) {
+		this.authorID = authorID;
 	}
 	/**
 	 * @return the authorName
@@ -43,5 +43,5 @@ public class Author {
 	public void setBooks(List<Book> books) {
 		this.books = books;
 	}
-
+	
 }

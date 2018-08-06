@@ -1,62 +1,77 @@
 package com.gcit.lms.dao;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.springframework.jdbc.core.ResultSetExtractor;
+import org.springframework.jdbc.core.*;
 import org.springframework.stereotype.Component;
+
+import java.sql.*;
+import java.util.*;
 
 import com.gcit.lms.entity.Author;
 
 @Component
-public class AuthorDAO extends BaseDAO<Author> implements ResultSetExtractor<List<Author>>{
-	
-	public void createAuthor(Author author)
-			throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
-		template.update("INSERT INTO tbl_author (authorName) values (?)", new Object[] { author.getAuthorName() });
-	}
-
-	public void updateAuthor(Author author)
-			throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
-		template.update("update tbl_author set authorName =? where authorId = ?", new Object[] { author.getAuthorName(), author.getAuthorId() });
-	}
-
-	public void deleteAuthor(Author author)
-			throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
-		template.update("delete from tbl_author where authorId = ?", new Object[] { author.getAuthorId() });
-	}
-
-	public List<Author> readAllAuthors() throws ClassNotFoundException, SQLException {
-		return template.query("select * from tbl_author", this);
-	}
-
-	public List<Author> readAllAuthorsByName(String searchString) throws ClassNotFoundException, SQLException {
-		return template.query("select * from tbl_author where authorName = ?", new Object[] { searchString }, this);
+public class AuthorDao extends BaseDao implements ResultSetExtractor<List<Author>> {
+		
+	public void addAuthor(Author author) throws SQLException {
+		final String addAuthor   = "INSERT INTO tbl_author (authorName) VALUE (?)";
+		Object[]     authorsInfo = {author.getAuthorName()};
+		template.update(addAuthor, authorsInfo);
 	}
 	
-	public List<Author> readAllAuthorsByBook(Integer bookId) throws ClassNotFoundException, SQLException {
-		return template.query("select * from tbl_author where authorId IN (select authorId from tbl_book_authors where bookId = ?)", new Object[] { bookId }, this);
+	public void updateAuthor(Author author) throws SQLException{
+		final String updateAuthor = "UPDATE tbl_author SET authorName = ? WHERE authorId = ?";
+		Object[]     authorsInfo  = {author.getAuthorName(),author.getAuthorID()};
+		template.update(updateAuthor, authorsInfo);
 	}
-
-	public Author readAuthorByPK(Integer primaryKey) throws ClassNotFoundException, SQLException {
-		List<Author> authors = template.query("select * from tbl_author where authorId = ?", new Object[] { primaryKey }, this);
-		if (!authors.isEmpty()) {
+	
+	public void deleteAuthor(Author author) throws SQLException{
+		final String deleteAuthor = "DELETE FROM tbl_author WHERE authorId = ?";
+		Object[]     authorsInfo  = {author.getAuthorID()};
+		template.update(deleteAuthor, authorsInfo);
+	}
+	
+	public List<Author> readAllAuthors() throws SQLException{	
+		final String readAuthor = "SELECT * FROM tbl_author";
+		return template.query(readAuthor, this);
+	}
+	
+	
+	public Integer countAuthors() throws SQLException{
+		String readAuthor = "SELECT * FROM tbl_author";
+		return template.query(readAuthor, this).size();
+	}
+	
+	public Author readAuthor(Integer authorID) throws SQLException{
+		final String readAuthor  = "SELECT * FROM tbl_author WHERE authorId = ?";
+		Object[]     authorsInfo = {authorID};
+		List<Author> authors     = template.query(readAuthor, authorsInfo, this);
+		if(authors!=null && !authors.isEmpty()){
 			return authors.get(0);
 		}
 		return null;
+	}
+	
+	public List<Author> readAuthor(String authorName) throws SQLException{
+		final String readAuthor  = "SELECT * FROM tbl_author WHERE authorName LIKE ?";
+		Object[] authorsInfo = {("%" + authorName + "%")};
+		return template.query(readAuthor, authorsInfo, this);
+	}
+	
+	public List<Author> readAuthorByBook(Integer bookID){
+		final String readAuthor  = "SELECT * FROM tbl_author WHERE authorId IN (SELECT authorId FROM tbl_book_authors WHERE bookId = ?)";
+		Object[]     bookInfo = {(bookID)};
+		return template.query(readAuthor, bookInfo, this);
 	}
 
 	@Override
 	public List<Author> extractData(ResultSet rs) throws SQLException {
 		List<Author> authors = new ArrayList<>();
-		while (rs.next()) {
+		while(rs.next()){
 			Author author = new Author();
-			author.setAuthorId(rs.getInt("authorId"));
+			author.setAuthorID(rs.getInt("authorId"));
 			author.setAuthorName(rs.getString("authorName"));
 			authors.add(author);
 		}
 		return authors;
 	}
+
 }
