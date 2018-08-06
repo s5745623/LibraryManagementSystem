@@ -3,7 +3,8 @@ package com.gcit.lms.service;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.transaction.annotation.*;
-import java.sql.*;
+import java.sql.*;import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 
 import com.gcit.lms.dao.*;
@@ -266,6 +267,7 @@ public class AdminService {
 	@RequestMapping(value = "/admin/updateDueDate", method = RequestMethod.POST, consumes="application/json")
 	public void updateDueDate(@RequestBody BookLoan bookLoan){
 		try {
+			bookLoan.setDueDate(Timestamp.valueOf(LocalDateTime.now(ZoneId.of("UTC")).plusWeeks(1)));
 			bookLoanDao.updateBookLoanDate(bookLoan);
 		} catch (SQLException e) {
 			e.printStackTrace();

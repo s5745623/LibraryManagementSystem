@@ -1,6 +1,8 @@
 package com.gcit.lms.service;
 
 import java.sql.*;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -128,6 +130,7 @@ public class BorrowerService {
 	@RequestMapping(value = "/borrower/returnBook", method = RequestMethod.POST, consumes="application/json")
 	public void returnBook(@RequestBody BookLoan bookLoan){
 		try {
+			bookLoan.setDueDate(Timestamp.valueOf(LocalDateTime.now(ZoneId.of("UTC"))));
 			bookLoanDao.returnBookLoanDate(bookLoan);
 			Branch branch = readBranch(bookLoan.getBranchID());
 			branchDao.addNoOfCopies(branch, bookLoan.getBookID());

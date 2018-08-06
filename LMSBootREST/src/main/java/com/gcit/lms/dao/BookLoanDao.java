@@ -4,6 +4,8 @@ import org.springframework.jdbc.core.*;
 import org.springframework.stereotype.Component;
 
 import java.sql.*;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 
 import com.gcit.lms.entity.BookLoan;
@@ -19,8 +21,7 @@ public class BookLoanDao extends BaseDao implements ResultSetExtractor<List<Book
 	
 	public void updateBookLoanDate(BookLoan bookLoan) throws SQLException {
 		String   updateBookLoanDate = "UPDATE tbl_book_loans SET dueDate=? WHERE bookId=? AND branchId=? AND cardNo=? AND dateOut=?";
-		Object[] bookLoanInfo = {new java.sql.Timestamp(bookLoan.getDueDate().getTime()), bookLoan.getBookID(), bookLoan.getBranchID(), 
-				bookLoan.getBorrowerID(), new java.sql.Timestamp(bookLoan.getDateOut().getTime())};
+		Object[] bookLoanInfo = {bookLoan.getDueDate(), bookLoan.getBookID(), bookLoan.getBranchID(), bookLoan.getBorrowerID(), bookLoan.getDateOut()};
 		template.update(updateBookLoanDate, bookLoanInfo);
 	}
 	
@@ -35,7 +36,7 @@ public class BookLoanDao extends BaseDao implements ResultSetExtractor<List<Book
 	public void returnBookLoanDate(BookLoan bookLoan) throws SQLException {
 		String  returnBookLoanDate = "UPDATE tbl_book_loans SET dateIn=NOW() WHERE bookId=? AND branchId=? AND cardNo=? AND dateOut=?";
 		Object[] bookLoanInfo = {bookLoan.getBookID(), bookLoan.getBranchID(), 
-				bookLoan.getBorrowerID(), new java.sql.Timestamp(bookLoan.getDateOut().getTime())};
+				bookLoan.getBorrowerID(), bookLoan.getDateOut()};
 		template.update(returnBookLoanDate, bookLoanInfo);
 	}
 	

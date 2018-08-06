@@ -41,12 +41,6 @@ public class BorrowerDao extends BaseDao implements ResultSetExtractor<List<Borr
 		template.update(deleteBorrower, borrowerInfo);
 	}
 	
-	public boolean checkBorrowerExist(Integer borrowerID) throws SQLException{
-		String   readBorrower = "SELECT * FROM tbl_borrower WHERE cardNo=?";
-		Object[] borrowerInfo = {borrowerID};
-		return !template.query(readBorrower, borrowerInfo, this).isEmpty();
-	}
-	
 	public List<Borrower> readAllBorrower() throws SQLException{
 		String readBorrower = "SELECT * FROM tbl_borrower";
 		return template.query(readBorrower, this);
